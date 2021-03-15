@@ -102,7 +102,7 @@ function App() {
     setFields(initFields(35, initialPosition))
   }
 
-  const onChangeDirection = useCallback(
+  const onChangeDirection = useCallback(　// レンダリングのたびに関数を再生成する無駄を省く
     (newDirection) => {
       if (status !== GameStatus.playing) {
         return direction
@@ -122,7 +122,7 @@ function App() {
       onChangeDirection(newDirection);
     };
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown) // 無駄になるのでイベントリスナーを削除
   }, [onChangeDirection])
   
   const handleMoving = () => { //方向転換時の動きを返す
