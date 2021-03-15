@@ -1,13 +1,53 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Navigation from './components/Navigation';
 import Field from './components/Field';
 import Button from './components/Button';
 import ManipulationPanel from './components/ManipulationPanel';
 import { initFields } from './utils/index';
 
-const fields = initFields(35)
+const initialPosition = { x: 17, y: 17 }
+const initialValues = initFields(35, initialPosition)
+const defaultInterval = 100
+
+let timer = undefined
+
+const unsubscribe = () => {
+  if (!timer) {
+    return
+  }
+  clearInterval(timer)
+}
 
 function App() {
+  const [fields, setFields] = useState(initialValues)
+  const [position, setPosition] = useState()
+  const [tick, setTick] = useState(0)
+
+  useEffect(() => {
+    setPosition(initialPosition)
+    // ゲームの中の時間を管理
+    timer = setInterval(() => {
+      setTick(tick => tick + 1)
+    }, defaultInterval);
+    return unsubscribe; // コンポーネントが削除されるタイミングで実行される
+  }, [])
+
+  useEffect(() => {
+    if (!position) {
+      return
+    }
+    goUp()
+  }, [tick]) //tickに変更があるたびに実行
+
+  const goUp = () => {
+    const { x, y } = position
+    const nextY = Math.max(y - 1, 0)
+    fields[y][x] = ''
+    fields[nextY][x] = 'snake'
+    setPosition({ x, y: nextY })
+    setFields(fields)
+  }
+
   return (
     <div className="App">
 
