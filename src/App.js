@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Navigation from './components/Navigation';
 import Field from './components/Field';
 import Button from './components/Button';
@@ -14,6 +14,34 @@ const GameStatus = Object.freeze({
   playing: 'playing',
   suspended: 'suspended',
   gameover: 'gameover',
+})
+
+const Direction = Object.freeze({
+  up: 'up',
+  right: 'right',
+  left: 'left',
+  down: 'down',
+})
+
+const DirectionKeyCodeMap = Object.freeze({
+  37: Direction.left,
+  38: Direction.up,
+  39: Direction.right,
+  40: Direction.down,
+})
+
+const OppositeDirection = Object.freeze({
+  up: 'down',
+  right: 'left',
+  left: 'right',
+  down: 'up',
+})
+
+const Delta = Object.freeze({
+  up: { x: 0, y: -1 },
+  right: { x: 1, y: 0 },
+  left: { x: -1, y: 0 },
+  down: { x: 0, y: 1 },
 })
 
 let timer = undefined
@@ -39,6 +67,7 @@ function App() {
   const [fields, setFields] = useState(initialValues)
   const [position, setPosition] = useState()
   const [status, setStatus] = useState(GameStatus.init)
+  const [direction, setDirection] = useState(Direction.up)
   const [tick, setTick] = useState(0)
 
   useEffect(() => {
@@ -54,8 +83,8 @@ function App() {
     if (!position || status !== GameStatus.playing) {
       return
     }
-    const canContinue = goUp() // goUpを実行、boolean値が返る
-    if (!canContinue) { // goUpがfalseならゲームを終了させる
+    const canContinue = handleMoving() // handleMovingを実行、boolean値が返る
+    if (!canContinue) { // handleMovingがfalseならゲームを終了させる
       unsubscribe()
       setStatus(GameStatus.gameover)
     }
@@ -67,20 +96,47 @@ function App() {
     timer = setInterval(() => {
       setTick(tick => tick + 1)
     }, defaultInterval)
-    // setDirection(Direction.up) //????
     setStatus(GameStatus.init)
     setPosition(initialPosition)
+    setDirection(Direction.up)
     setFields(initFields(35, initialPosition))
   }
 
-  const goUp = () => {
+  const onChangeDirection = useCallback(
+    (newDirection) => {
+      if (status !== GameStatus.playing) {
+        return direction
+      }
+      if (OppositeDirection[direction] === newDirection) {
+        return
+      }
+      setDirection(newDirection);
+    }, [direction, status])
+  
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const newDirection = DirectionKeyCodeMap[e.keyCode];
+      if (!newDirection) {
+        return;
+      }
+      onChangeDirection(newDirection);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onChangeDirection])
+  
+  const handleMoving = () => { //方向転換時の動きを返す
     const { x, y } = position
-    const newPosition = { x, y: y - 1 }
+    const delta = Delta[direction]
+    const newPosition = {
+      x: x + delta.x,
+      y: y + delta.y,
+    }
     if (isCollision(fields.length, newPosition)) { //次のポジションがフィールド外でないかisCollisionで判定
       return false
     }
     fields[y][x] = ''
-    fields[newPosition.y][x] = 'snake'
+    fields[newPosition.y][newPosition.x] = 'snake'
     setPosition(newPosition)
     setFields(fields)
     return true
@@ -102,7 +158,7 @@ function App() {
 
       <footer className="footer">
         <Button status={status} onStart={onStart} onRestart={onRestart} />
-        <ManipulationPanel />
+        <ManipulationPanel onChange={onChangeDirection} />
       </footer>
       
     </div>
