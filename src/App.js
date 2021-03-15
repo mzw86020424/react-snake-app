@@ -94,7 +94,9 @@ function App() {
     }
   }, [tick]) //tickに変更があるたびに実行
 
-  const onStart = ()=>setStatus(GameStatus.playing)
+  const onStart = () => setStatus(GameStatus.playing)
+  
+  const onStop = () => setStatus(GameStatus.suspended)
 
   const onRestart = () => {
     timer = setInterval(() => {
@@ -170,7 +172,12 @@ function App() {
       </main>
 
       <footer className="footer">
-        <Button status={status} onStart={onStart} onRestart={onRestart} />
+        <Button
+          status={status}
+          onStop={onStop}
+          onStart={onStart}
+          onRestart={onRestart}
+        />
         <ManipulationPanel onChange={onChangeDirection} />
       </footer>
       
