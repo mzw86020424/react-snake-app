@@ -63,6 +63,10 @@ const isCollision = (fieldSize, position) => {
   return false;
 }
 
+const isEatingMyself = (fields, position) => {
+  return fields[position.y][position.x] === 'snake'
+}
+
 function App() {
   const [fields, setFields] = useState(initialValues)
   const [body, setBody] = useState([])
@@ -132,7 +136,7 @@ function App() {
       x: x + delta.x,
       y: y + delta.y,
     }
-    if (isCollision(fields.length, newPosition)) { //次のポジションがフィールド外でないかisCollisionで判定
+    if (isCollision(fields.length, newPosition) || isEatingMyself(fields, newPosition)) { //次のポジションがフィールド外でないかisCollisionで判定
       return false
     }
     const newBody = [...body]
