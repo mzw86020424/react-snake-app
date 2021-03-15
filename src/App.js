@@ -3,7 +3,7 @@ import Navigation from './components/Navigation';
 import Field from './components/Field';
 import Button from './components/Button';
 import ManipulationPanel from './components/ManipulationPanel';
-import { initFields } from './utils/index';
+import { initFields, getFoodPosition } from './utils/index';
 
 const initialPosition = { x: 17, y: 17 }
 const initialValues = initFields(35, initialPosition)
@@ -65,13 +65,13 @@ const isCollision = (fieldSize, position) => {
 
 function App() {
   const [fields, setFields] = useState(initialValues)
-  const [position, setPosition] = useState()
+  const [body, setBody] = useState([])
   const [status, setStatus] = useState(GameStatus.init)
   const [direction, setDirection] = useState(Direction.up)
   const [tick, setTick] = useState(0)
 
   useEffect(() => {
-    setPosition(initialPosition)
+    setBody([initialPosition])
     // ゲームの中の時間を管理
     timer = setInterval(() => {
       setTick(tick => tick + 1)
@@ -80,7 +80,7 @@ function App() {
   }, [])
 
   useEffect(() => {
-    if (!position || status !== GameStatus.playing) {
+    if (body.length === 0 || status !== GameStatus.playing) {
       return
     }
     const canContinue = handleMoving() // handleMovingを実行、boolean値が返る
@@ -97,7 +97,7 @@ function App() {
       setTick(tick => tick + 1)
     }, defaultInterval)
     setStatus(GameStatus.init)
-    setPosition(initialPosition)
+    setBody([initialPosition])
     setDirection(Direction.up)
     setFields(initFields(35, initialPosition))
   }
@@ -125,8 +125,8 @@ function App() {
     return () => document.removeEventListener('keydown', handleKeyDown) // 無駄になるのでイベントリスナーを削除
   }, [onChangeDirection])
   
-  const handleMoving = () => { //方向転換時の動きを返す
-    const { x, y } = position
+  const handleMoving = () => { //動きを返す
+    const { x, y } = body[0]
     const delta = Delta[direction]
     const newPosition = {
       x: x + delta.x,
@@ -135,9 +135,18 @@ function App() {
     if (isCollision(fields.length, newPosition)) { //次のポジションがフィールド外でないかisCollisionで判定
       return false
     }
-    fields[y][x] = ''
+    const newBody = [...body]
+    if (fields[newPosition.y][newPosition.x] !== 'food') {
+      const removingTrack = newBody.pop()
+      fields[removingTrack.y][removingTrack.x] = ''
+    } else {
+      const food = getFoodPosition(fields.length, [...newBody, newPosition])
+      fields[food.y][food.x] = 'food'
+    }
     fields[newPosition.y][newPosition.x] = 'snake'
-    setPosition(newPosition)
+    newBody.unshift(newPosition)
+
+    setBody(newBody)
     setFields(fields)
     return true
   }
